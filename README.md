@@ -58,8 +58,18 @@ app nativo/híbrido (ex.: Capacitor + `@capacitor-community/bluetooth-le`).
 ## Dicas
 
 - O ViHealth **não pode** estar conectado ao mesmo tempo (BLE aceita 1 conexão por vez).
-- O oxímetro desliga sozinho ao tirar o dedo — a queda de conexão é normal; basta
-  colocar o dedo e conectar de novo.
+- O oxímetro desliga sozinho ao tirar o dedo — a queda de conexão é normal.
+
+## Reconexão automática
+
+- **Na mesma sessão:** depois de autorizar o oxímetro uma vez, a página fica em modo
+  "aguardando" quando ele desliga e reconecta sozinha (tentativas a cada 3 s) assim
+  que você coloca o dedo de novo. O botão **Desconectar** encerra esse modo.
+- **Entre sessões:** ao reabrir a página, ela usa `navigator.bluetooth.getDevices()`
+  para recuperar o dispositivo já autorizado e reconectar **sem popup**. Se isso não
+  acontecer no seu Chrome, habilite a flag
+  `chrome://flags/#enable-web-bluetooth-new-permissions-backend` (em versões antigas
+  ela vem desligada).
 
 ## Créditos / referências
 

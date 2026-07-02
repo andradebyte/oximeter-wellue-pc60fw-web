@@ -171,6 +171,9 @@
 
     let device = null;
     let rxBuffer = [];
+    let wantConnection = false; // usuário quer ficar conectado (liga o auto-reconnect)
+    let reconnectTimer = null;
+    const RECONNECT_INTERVAL_MS = 3000;
 
     function log(msg) {
       const el = $('log');
@@ -263,11 +266,30 @@
           filters: [{ namePrefix: 'PC-60F' }],
           optionalServices: [SERVICE_UUID],
         });
+        adoptDevice(device);
+        wantConnection = true;
+        await establish();
+      } catch (err) {
+        if (err.name === 'NotFoundError') {
+          log('Nenhum dispositivo selecionado. O oxímetro precisa estar LIGADO e MEDINDO para aparecer.');
+          setStatus('Desconectado');
+        } else {
+          log(`Erro: ${err.message}`);
+          setStatus('Erro na conexão', 'err');
+        }
+      }
+    }
 
-        device.addEventListener('gattserverdisconnected', onDisconnected);
-        log(`Dispositivo selecionado: ${device.name}`);
-        $('deviceName').textContent = device.name;
+    function adoptDevice(d) {
+      device = d;
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+      log(`Dispositivo: ${device.name}`);
+      $('deviceName').textContent = device.name;
+    }
 
+    // Conecta (ou reconecta) no dispositivo já autorizado — não precisa de popup nem clique
+    async function establish() {
+      try {
         setStatus('Conectando…');
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService(SERVICE_UUID);
@@ -281,27 +303,62 @@
         btnConnect.disabled = true;
         btnDisconnect.disabled = false;
       } catch (err) {
-        if (err.name === 'NotFoundError') {
-          log('Nenhum dispositivo selecionado. O oxímetro precisa estar LIGADO e MEDINDO para aparecer.');
-          setStatus('Desconectado');
-        } else {
-          log(`Erro: ${err.message}`);
-          setStatus('Erro na conexão', 'err');
-        }
+        log(`Falha ao conectar: ${err.message}`);
+        scheduleReconnect();
       }
+    }
+
+    function scheduleReconnect() {
+      if (!wantConnection || !device) return;
+      setStatus('Aguardando o oxímetro ligar… (coloque o dedo)');
+      btnConnect.disabled = true;
+      btnDisconnect.disabled = false;
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(establish, RECONNECT_INTERVAL_MS);
     }
 
     function onDisconnected() {
       // O PC-60FW desliga sozinho ao tirar o dedo, então quedas são normais
-      setStatus('Desconectado (o oxímetro desliga ao tirar o dedo)');
-      log('Conexão encerrada.');
-      btnConnect.disabled = false;
-      btnDisconnect.disabled = true;
       rxBuffer = [];
+      if (wantConnection) {
+        log('Oxímetro desligou — vou reconectar quando ele voltar.');
+        scheduleReconnect();
+      } else {
+        setStatus('Desconectado');
+        log('Conexão encerrada.');
+        btnConnect.disabled = false;
+        btnDisconnect.disabled = true;
+      }
     }
 
     function disconnect() {
-      if (device?.gatt?.connected) device.gatt.disconnect();
+      wantConnection = false;
+      clearTimeout(reconnectTimer);
+      if (device?.gatt?.connected) {
+        device.gatt.disconnect();
+      } else {
+        setStatus('Desconectado');
+        btnConnect.disabled = false;
+        btnDisconnect.disabled = true;
+      }
+    }
+
+    // Reconexão entre sessões: recupera dispositivos já autorizados sem abrir popup.
+    // getDevices() existe no Chrome/Edge; em versões antigas fica atrás de
+    // chrome://flags/#enable-web-bluetooth-new-permissions-backend
+    async function resumePreviousDevice() {
+      if (!navigator.bluetooth?.getDevices) return;
+      try {
+        const devices = await navigator.bluetooth.getDevices();
+        const previous = devices.find((d) => d.name?.startsWith('PC-60F'));
+        if (!previous) return;
+        adoptDevice(previous);
+        wantConnection = true;
+        log('Oxímetro já autorizado anteriormente — reconectando automaticamente.');
+        await establish();
+      } catch (err) {
+        log(`Não foi possível retomar dispositivo anterior: ${err.message}`);
+      }
     }
 
     btnConnect.addEventListener('click', connect);
@@ -311,6 +368,8 @@
       $('unsupported').classList.remove('hidden');
       btnConnect.disabled = true;
       setStatus('Web Bluetooth indisponível', 'err');
+    } else {
+      resumePreviousDevice();
     }
 
     drawWave();
