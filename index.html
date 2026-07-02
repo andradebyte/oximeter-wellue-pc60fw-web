@@ -381,11 +381,21 @@
     // getDevices() existe no Chrome/Edge; em versões antigas fica atrás de
     // chrome://flags/#enable-web-bluetooth-new-permissions-backend
     async function resumePreviousDevice() {
-      if (!navigator.bluetooth?.getDevices) return;
+      if (location.protocol === 'file:') {
+        log('DIAGNÓSTICO: página aberta via file:// — o Chrome NÃO persiste permissões Bluetooth assim. Sirva via http://localhost (docker compose up / npx serve) para a reconexão pós-F5 funcionar.');
+      }
+      if (!navigator.bluetooth?.getDevices) {
+        log('DIAGNÓSTICO: getDevices() não existe neste Chrome. Ative chrome://flags/#enable-web-bluetooth-new-permissions-backend e reinicie o navegador.');
+        return;
+      }
       try {
         const devices = await navigator.bluetooth.getDevices();
+        log(`DIAGNÓSTICO: getDevices() retornou ${devices.length} dispositivo(s) lembrado(s): ${devices.map((d) => d.name).join(', ') || 'nenhum'}`);
         const previous = devices.find((d) => d.name?.startsWith('PC-60F'));
-        if (!previous) return;
+        if (!previous) {
+          log('Nenhum PC-60F lembrado. Confira chrome://settings/content/bluetoothDevices após autorizar.');
+          return;
+        }
         adoptDevice(previous);
         wantConnection = true;
         log('Oxímetro já autorizado anteriormente — reconexão automática ativa.');
