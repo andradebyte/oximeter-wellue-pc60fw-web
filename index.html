@@ -317,12 +317,44 @@
       reconnectTimer = setTimeout(establish, RECONNECT_INTERVAL_MS);
     }
 
+    // Espera o oxímetro voltar a anunciar antes de conectar. Necessário após
+    // recarregar a página (dispositivos vindos de getDevices() só conectam de
+    // forma confiável depois de um advertisement); se watchAdvertisements não
+    // existir, cai no loop de tentativas do scheduleReconnect.
+    let advertisementWatcher = null;
+    function waitForAdvertisement() {
+      if (!wantConnection || !device) return;
+      if (typeof device.watchAdvertisements !== 'function') {
+        scheduleReconnect();
+        return;
+      }
+      setStatus('Aguardando o oxímetro ligar… (coloque o dedo)');
+      btnConnect.disabled = true;
+      btnDisconnect.disabled = false;
+
+      advertisementWatcher?.abort();
+      advertisementWatcher = new AbortController();
+
+      device.addEventListener('advertisementreceived', () => {
+        log('Oxímetro detectado — conectando…');
+        advertisementWatcher?.abort();
+        advertisementWatcher = null;
+        establish();
+      }, { once: true });
+
+      device.watchAdvertisements({ signal: advertisementWatcher.signal }).catch((err) => {
+        if (err.name === 'AbortError') return;
+        log(`watchAdvertisements indisponível (${err.message}) — usando tentativas periódicas.`);
+        scheduleReconnect();
+      });
+    }
+
     function onDisconnected() {
       // O PC-60FW desliga sozinho ao tirar o dedo, então quedas são normais
       rxBuffer = [];
       if (wantConnection) {
         log('Oxímetro desligou — vou reconectar quando ele voltar.');
-        scheduleReconnect();
+        waitForAdvertisement();
       } else {
         setStatus('Desconectado');
         log('Conexão encerrada.');
@@ -334,6 +366,8 @@
     function disconnect() {
       wantConnection = false;
       clearTimeout(reconnectTimer);
+      advertisementWatcher?.abort();
+      advertisementWatcher = null;
       if (device?.gatt?.connected) {
         device.gatt.disconnect();
       } else {
@@ -354,8 +388,8 @@
         if (!previous) return;
         adoptDevice(previous);
         wantConnection = true;
-        log('Oxímetro já autorizado anteriormente — reconectando automaticamente.');
-        await establish();
+        log('Oxímetro já autorizado anteriormente — reconexão automática ativa.');
+        waitForAdvertisement();
       } catch (err) {
         log(`Não foi possível retomar dispositivo anterior: ${err.message}`);
       }
