@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { computeStats, formatDuration } from '../lib/connectionStats.js';
 
-// Resumo clicável do histórico de conexão, no mesmo estilo dos outros painéis
-// da home (Wave, Vitals) — abre a tela de detalhe com a linha do tempo completa.
 export default function ConnectionStats({ events, onSelect }) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {

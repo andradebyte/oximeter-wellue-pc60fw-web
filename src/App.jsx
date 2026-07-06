@@ -13,7 +13,6 @@ import ConnectionHistory from './components/ConnectionHistory.jsx';
 
 export default function App() {
   const waveRef = useRef(null);
-  // 'home' | chave de uma métrica; ?view=spo2 abre direto na tela da métrica
   const [view, setView] = useState(
     () => new URLSearchParams(location.search).get('view') ?? 'home',
   );

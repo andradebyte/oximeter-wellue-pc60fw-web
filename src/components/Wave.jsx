@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createWave } from '../lib/wave.js';
 
-// As amostras (~30 Hz) não passam pelo estado do React: o pai recebe `apiRef`
-// e chama apiRef.current.push(v) direto no canvas.
 export default function Wave({ apiRef, onSelect }) {
   const canvasRef = useRef(null);
 

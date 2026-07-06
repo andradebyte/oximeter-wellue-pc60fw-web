@@ -1,161 +1,178 @@
-# Oxímetro PC-60FW via Web Bluetooth
+# PC-60FW Oximeter via Web Bluetooth
 
-PWA (Vite + React + [vite-plugin-pwa](https://vite-pwa-org.netlify.app/)) que conecta no oxímetro
-Wellue/Viatom **PC-60FW** usando a Web Bluetooth API — sem precisar do app ViHealth.
-Instalável na tela inicial e com service worker para funcionar offline (a conexão BLE
-continua exigindo o navegador aberto).
+PWA (Vite + React + [vite-plugin-pwa](https://vite-pwa-org.netlify.app/)) that connects to the
+Wellue/Viatom **PC-60FW** oximeter using the Web Bluetooth API — no need for the ViHealth app.
+Installable on the home screen and with a service worker for offline use (the BLE connection
+still requires the browser to stay open).
 
-## Estrutura
+## Structure
 
 ```
-index.html                            casca da SPA (#root)
-src/main.jsx                          bootstrap do React
-src/App.jsx                           composição da tela (home ↔ detalhe)
-src/components/Toolbar.jsx            botões conectar/desconectar + status
-src/components/Vitals.jsx             cards de vitais (clicáveis → tela de detalhe)
-src/components/MetricDetail.jsx       tela de detalhe: descrição, números e gráfico
-src/components/TimeSeriesChart.jsx    gráfico de linha (canvas) com pan e tooltip
-src/components/Wave.jsx               painel da curva (canvas via ref)
-src/components/DeviceMeta.jsx         nome do dispositivo + bateria
-src/components/ConnectionStats.jsx    resumo do histórico de conexão (home)
-src/components/ConnectionHistory.jsx  tela de detalhe: linha do tempo de conexões/quedas
-src/components/Log.jsx                log com auto-scroll
-src/components/UnsupportedWarning.jsx aviso de navegador sem Web Bluetooth
-src/hooks/useOximeter.js              hook que expõe o oxímetro como estado React
-src/lib/oximeter.js                   conexão BLE + parsing do protocolo (sem React)
-src/lib/connectionStats.js            registro/derivação das estatísticas de conexão (sem React)
-src/lib/wave.js                       desenho da curva pletismográfica (sem React)
-src/lib/metrics.js                    metadados das métricas (descrição, cor, eixo Y)
-src/style.css                         estilos
-public/                               ícones do PWA
-vite.config.js                        config do Vite (React + PWA/manifest)
+index.html                            SPA shell (#root)
+src/main.jsx                          React bootstrap
+src/App.jsx                           screen composition (home ↔ detail)
+src/components/Toolbar.jsx            connect/disconnect buttons + status
+src/components/Vitals.jsx             vitals cards (clickable → detail screen)
+src/components/MetricDetail.jsx       detail screen: description, numbers and chart
+src/components/TimeSeriesChart.jsx    line chart (canvas) with pan and tooltip
+src/components/Wave.jsx               waveform panel (canvas via ref)
+src/components/DeviceMeta.jsx         device name + battery
+src/components/ConnectionStats.jsx    connection history summary (home)
+src/components/ConnectionHistory.jsx  detail screen: connection/drop timeline
+src/components/Log.jsx                log with auto-scroll
+src/components/UnsupportedWarning.jsx warning for browsers without Web Bluetooth
+src/hooks/useOximeter.js              hook that exposes the oximeter as React state
+src/lib/oximeter.js                   BLE connection + protocol parsing (no React)
+src/lib/connectionStats.js            connection stats recording/derivation (no React)
+src/lib/wave.js                       plethysmographic waveform drawing (no React)
+src/lib/metrics.js                    metric metadata (description, color, Y axis)
+src/style.css                         styles
+public/                               PWA icons
+vite.config.js                        Vite config (React + PWA/manifest)
 ```
 
-O código BLE (`lib/oximeter.js`) e o desenho da curva (`lib/wave.js`) não dependem de
-React — a integração acontece no `hooks/useOximeter.js`. As amostras da curva (~30 Hz)
-não passam pelo estado do React: vão do BLE direto para o canvas via ref.
+The BLE code (`lib/oximeter.js`) and the waveform drawing (`lib/wave.js`) don't depend on
+React — the integration happens in `hooks/useOximeter.js`. Waveform samples (~30 Hz)
+don't go through React state: they go straight from BLE to the canvas via ref.
 
-## Telas de detalhe
+## Detail screens
 
-Clicar em um card da home (SpO₂, Pulso, Perfusão) ou no painel da curva
-pletismográfica abre a tela da métrica, com:
+Clicking a card on the home screen (SpO₂, Pulse, Perfusion) or the plethysmographic
+waveform panel opens the metric's screen, with:
 
-- descrição do que o dado significa, com exemplo;
-- valor atual + histórico das leituras cruas (número, unidade e horário de chegada);
-- cadência medida (a cada quantos segundos as leituras estão chegando);
-- gráfico de linha ao vivo: o eixo X cresce a cada leitura e, quando o histórico passa
-  da janela visível, dá para **arrastar** o gráfico para navegar pelo passado
-  ("Voltar ao vivo" retorna ao acompanhamento). Passar o mouse mostra o valor exato.
+- a description of what the data means, with an example;
+- current value + history of raw readings (number, unit and arrival time);
+- measured cadence (how often readings are arriving, in seconds);
+- live line chart: the X axis grows with each reading and, once the history exceeds
+  the visible window, you can **drag** the chart to browse the past
+  ("Back to live" returns to live tracking). Hovering shows the exact value.
 
-O histórico guarda até 1 h de leituras (~3600 pontos por métrica) e existe só em
-memória — recarregar a página zera.
+The history keeps up to 1 h of readings (~3600 points per metric) and only lives in
+memory — reloading the page resets it.
 
-## Histórico de conexão
+## Connection history
 
-Um painel próprio na home ("Histórico de conexão") acompanha o link BLE de verdade
-(não a UI de "aguardando reconexão"): mostra se está conectado ou desconectado agora
-e há quanto tempo, o tempo total acumulado conectado e desconectado, e o número de
-quedas. Clicar nele abre a linha do tempo completa, com cada sessão (conectou às
-X, desconectou às Y, durou Z) e cada lacuna de desconexão, mais recente primeiro —
-com um botão para limpar o histórico.
+A dedicated panel on the home screen ("Connection history") tracks the actual BLE
+link (not the "waiting for reconnection" UI): it shows whether it's currently
+connected or disconnected and for how long, the total accumulated connected and
+disconnected time, and the number of drops. Clicking it opens the full timeline,
+with each session (connected at X, disconnected at Y, lasted Z) and each
+disconnection gap, most recent first — with a button to clear the history.
 
-Diferente do histórico de leituras, esses dados ficam salvos no `localStorage` do
-navegador (`src/lib/connectionStats.js`), então sobrevivem a recarregar a página.
+Unlike the readings history, this data is saved in the browser's `localStorage`
+(`src/lib/connectionStats.js`), so it survives page reloads.
 
-A curva é um caso especial: chegam ~30 amostras/s, então o histórico dela (últimos
-~5 min) fica fora do estado do React (ref mutável) e a tela re-renderiza no máximo
-~3x/s; o gráfico usa uma escala de tempo mais esticada (90 px/s) e os horários
-aparecem com milissegundos.
+The waveform is a special case: ~30 samples/s arrive, so its history (last
+~5 min) lives outside React state (mutable ref) and the screen re-renders at most
+~3x/s; the chart uses a more stretched time scale (90 px/s) and timestamps
+show milliseconds.
 
-## Modo demo
+## Demo mode
 
-Sem o oxímetro em mãos, abra com `?demo` na URL (ex.: `http://localhost:3000/?demo`)
-para ver números, curva e gráficos com dados simulados. `?view=spo2|pulse|pi|wave`
-abre direto na tela de uma métrica (combinável: `/?demo&view=wave`).
+Without the oximeter on hand, open with `?demo` in the URL (e.g.
+`http://localhost:3000/?demo`) to see numbers, waveform and charts with simulated
+data. `?view=spo2|pulse|pi|wave` opens directly on a metric's screen (combinable:
+`/?demo&view=wave`).
 
-## Como rodar
+## How to run
 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
 ```
 
-O modo dev já registra o service worker (`devOptions.enabled`), então dá para testar
-o comportamento de PWA sem build.
+Dev mode already registers the service worker (`devOptions.enabled`), so you can
+test PWA behavior without building.
 
-Build de produção:
+Production build:
 
 ```bash
-npm run build      # gera dist/ com sw.js + manifest
-npm run preview    # serve o build em http://localhost:4173
+npm run build      # generates dist/ with sw.js + manifest
+npm run preview    # serves the build at http://localhost:4173
 ```
 
-### Com Docker
+### With Docker
 
 ```bash
 docker compose up -d --build
 ```
 
-O Dockerfile faz o build do Vite e serve o `dist/` com nginx em **http://localhost:8080**.
+The Dockerfile builds the Vite app and serves `dist/` with nginx at **http://localhost:8080**.
 
-> Web Bluetooth só funciona em contexto seguro: `localhost` vale, mas o IP da rede
-> (ex.: `http://192.168.0.10:8080`) **não** — para acessar de outro aparelho veja a
-> seção do celular abaixo.
+> Web Bluetooth only works in a secure context: `localhost` is fine, but the network IP
+> (e.g. `http://192.168.0.10:8080`) is **not** — to access from another device see the
+> mobile section below.
 
-## Como testar
+## How to test
 
-1. Sirva a página (`npm run dev`) e abra no **Chrome** ou **Edge**.
-2. Coloque o dedo no oxímetro — ele liga e começa a anunciar via BLE.
-3. Clique em **Conectar oxímetro** e selecione o `PC-60F_SN...` no popup.
+1. Serve the page (`npm run dev`) and open it in **Chrome** or **Edge**.
+2. Put your finger on the oximeter — it turns on and starts advertising via BLE.
+3. Click **Connect oximeter** and select `PC-60F_SN...` in the popup.
 
-> O computador precisa ter Bluetooth 4.0+ (BLE). Abrir via `file://` não funciona mais
-> (o app agora usa módulos ES) — e o Chrome também não persiste permissões Bluetooth
-> nesse modo.
+> The computer needs Bluetooth 4.0+ (BLE). Opening via `file://` no longer works
+> (the app now uses ES modules) — and Chrome also doesn't persist Bluetooth
+> permissions in that mode.
 
-### No celular Android
+### On Android
 
-Web Bluetooth exige HTTPS ou `localhost`. O `npm run dev` já escuta na rede
-(`server.host: true`); acesse pelo Chrome do celular usando o IP do PC
-(ex.: `http://192.168.0.10:3000`) — como não é localhost, habilite a flag
-`chrome://flags/#unsafely-treat-insecure-origin-as-secure` com essa URL **apenas para
-teste**, ou publique em qualquer host HTTPS (GitHub Pages, Vercel, Netlify) e teste
-direto. Em HTTPS também aparece a opção de **instalar** o PWA na tela inicial.
+Web Bluetooth requires HTTPS or `localhost`. `npm run dev` already listens on the
+network (`server.host: true`); access it from Chrome on your phone using the PC's IP
+(e.g. `http://192.168.0.10:3000`) — since it's not localhost, enable the flag
+`chrome://flags/#unsafely-treat-insecure-origin-as-secure` with that URL **for testing
+only**, or publish to any HTTPS host (GitHub Pages, Vercel, Netlify) and test
+directly. Over HTTPS you'll also get the option to **install** the PWA on the home
+screen.
 
 ### iOS
 
-❌ Não funciona — nenhum navegador iOS suporta Web Bluetooth. Para iPhone é preciso
-app nativo/híbrido (ex.: Capacitor + `@capacitor-community/bluetooth-le`).
+❌ Doesn't work — no iOS browser supports Web Bluetooth. For iPhone you need a
+native/hybrid app (e.g. Capacitor + `@capacitor-community/bluetooth-le`).
 
-## Detalhes do protocolo
+## Protocol details
 
-- Serviço BLE: Nordic UART (`6e400001-b5a3-f393-e0a9-e50e24dcca9e`)
-- Notificações em `6e400003-...`
-- Frames começam com `AA 55`:
-  - `AA 55 0F 08 01 …` → SpO₂ (byte 5), pulso (byte 6), PI×10 (byte 8)
-  - `AA 55 0F .. 02 …` → amostra da curva pletismográfica (byte 5)
-  - `AA 55 F0 03 03 …` → nível de bateria 0–3 (byte 5)
-- Frames não reconhecidos aparecem em hex no log da página — útil para mapear o resto
-  do protocolo.
+- BLE service: Nordic UART (`6e400001-b5a3-f393-e0a9-e50e24dcca9e`)
+- Notifications on `6e400003-...`
+- Frames start with `AA 55`:
+  - `AA 55 0F 08 01 …` → SpO₂ (byte 5), pulse (byte 6), PI×10 (byte 8)
+  - `AA 55 0F .. 02 …` → plethysmographic waveform sample (byte 5)
+  - `AA 55 F0 03 03 …` → battery level 0–3 (byte 5)
+- Unrecognized frames show up in hex in the page log — useful for mapping the rest
+  of the protocol.
 
-## Dicas
+## Tips
 
-- O ViHealth **não pode** estar conectado ao mesmo tempo (BLE aceita 1 conexão por vez).
-- O oxímetro desliga sozinho ao tirar o dedo — a queda de conexão é normal.
+- ViHealth **cannot** be connected at the same time (BLE only allows 1 connection at a time).
+- The oximeter turns off by itself when you remove your finger — the connection drop is normal.
 
-## Reconexão automática
+## Automatic reconnection
 
-- **Na mesma sessão:** depois de autorizar o oxímetro uma vez, a página fica em modo
-  "aguardando" quando ele desliga e reconecta sozinha (tentativas a cada 3 s) assim
-  que você coloca o dedo de novo. O botão **Desconectar** encerra esse modo.
-- **Entre sessões:** ao reabrir a página, ela usa `navigator.bluetooth.getDevices()`
-  para recuperar o dispositivo já autorizado e reconectar **sem popup**. Se isso não
-  acontecer no seu Chrome, habilite a flag
-  `chrome://flags/#enable-web-bluetooth-new-permissions-backend` (em versões antigas
-  ela vem desligada).
+- **Within the same session:** after authorizing the oximeter once, the page enters
+  "waiting" mode when it turns off and reconnects on its own (retries every 3 s) as
+  soon as you put your finger back on. The **Disconnect** button ends this mode.
+- **Across sessions:** when reopening the page, it uses `navigator.bluetooth.getDevices()`
+  to recover the already-authorized device and reconnect **without a popup**. If this
+  doesn't happen in your Chrome, enable the flag
+  `chrome://flags/#enable-web-bluetooth-new-permissions-backend` (disabled by default
+  in older versions).
 
-## Créditos / referências
+## Credits / references
 
-- Protocolo mapeado pela comunidade: [anaesthetics.app/blog](https://anaesthetics.app/blog/posts/2020/bluetooth/)
-  e [ESPHome + PC-60FW (Home Assistant Community)](https://community.home-assistant.io/t/esphome-config-to-read-from-pc-60fw-bluetooth-pulse-oximeter-and-display-locally/884140)
+- Protocol mapped by the community: [anaesthetics.app/blog](https://anaesthetics.app/blog/posts/2020/bluetooth/)
+  and [ESPHome + PC-60FW (Home Assistant Community)](https://community.home-assistant.io/t/esphome-config-to-read-from-pc-60fw-bluetooth-pulse-oximeter-and-display-locally/884140)
 
-> ⚠️ Uso educacional/pessoal. Não é um dispositivo validado para uso clínico via terceiros.
+> ⚠️ Educational/personal use. Not a device validated for clinical use by third parties.
+
+## Use by LLMs / AI agents
+
+This repository is free and open for use by LLMs, AI coding agents, and
+automated tools — feel free to read, index, reuse, fork, or build on top of
+this code without asking for permission.
+
+The UI copy (buttons, labels, log messages) is in Portuguese, but that's
+just presentation text — what actually matters is the implementation: the
+Web Bluetooth connection logic, the PC-60FW protocol parsing, the
+reconnection strategy, and the canvas-based charting. All of that is
+plain, framework-agnostic JavaScript/React and can be understood, adapted,
+and reused by anyone, regardless of language. See `PROTOCOL.md` for a full
+(English) breakdown of the BLE protocol if you're integrating with the
+device directly.

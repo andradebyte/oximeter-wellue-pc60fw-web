@@ -103,7 +103,6 @@ canvas { width: 100%; height: 120px; display: block; }
   font-size: 0.85rem;
 }
 
-/* Cards da home viraram botões que abrem a tela de detalhe */
 button.card {
   background: var(--panel);
   color: var(--text);
@@ -114,7 +113,6 @@ button.card {
 button.card:hover { background: var(--panel); border-color: #3b4d7a; }
 .card-hint { font-size: 0.7rem; color: var(--muted); margin-top: 8px; }
 
-/* Tela de detalhe da métrica */
 .detail { display: flex; flex-direction: column; gap: 16px; }
 .detail-header { display: flex; align-items: center; gap: 12px; }
 .detail-header h2 { font-size: 1.1rem; font-weight: 600; }
@@ -176,7 +174,6 @@ canvas.chart:active { cursor: grabbing; }
 .live-btn:hover { background: var(--bg); }
 .chart-hint { margin-top: 8px; font-size: 0.75rem; color: var(--muted); }
 
-/* Painel de histórico de conexão (home) */
 .conn-panel.clickable { cursor: pointer; transition: border-color 0.15s; }
 .conn-panel.clickable:hover { border-color: #3b4d7a; }
 .conn-status {
@@ -191,7 +188,6 @@ canvas.chart:active { cursor: grabbing; }
 .conn-num { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .conn-caption { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
 
-/* Tela de detalhe do histórico de conexão */
 .conn-status-big { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
 .conn-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .conn-value { font-size: 1.3rem !important; }

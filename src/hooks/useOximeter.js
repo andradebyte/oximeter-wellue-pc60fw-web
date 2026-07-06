@@ -5,9 +5,9 @@ import { loadEvents, recordEvent, clearEvents } from '../lib/connectionStats.js'
 const supported = typeof navigator !== 'undefined' && !!navigator.bluetooth;
 const demoMode = new URLSearchParams(location.search).has('demo');
 
-const HISTORY_CAP = 3600; // ~1 h de leituras a 1 Hz
-const WAVE_CAP = 9000; // ~5 min de amostras a 30 Hz
-const WAVE_TICK_MS = 300; // re-render da tela da curva no máx. ~3x/s
+const HISTORY_CAP = 3600;
+const WAVE_CAP = 9000;
+const WAVE_TICK_MS = 300;
 
 function timestamp(msg) {
   return `[${new Date().toLocaleTimeString()}] ${msg}`;
@@ -19,12 +19,6 @@ function appendReading(list, v) {
   return next;
 }
 
-/**
- * Expõe o oxímetro como estado React, incluindo o histórico com timestamp de
- * cada leitura (para os gráficos e para medir a cadência de chegada).
- * As amostras da curva (~30 Hz) NÃO viram estado — vão direto para o canvas
- * via onWaveSample. Com ?demo na URL, gera leituras simuladas sem o aparelho.
- */
 export function useOximeter(onWaveSample) {
   const [vitals, setVitals] = useState({ spo2: '--', pulse: '--', pi: '--' });
   const [history, setHistory] = useState({ spo2: [], pulse: [], pi: [] });
@@ -38,7 +32,6 @@ export function useOximeter(onWaveSample) {
   const [active, setActive] = useState(false);
   const [logs, setLogs] = useState(['Aguardando conexão…']);
 
-  // Log bruto de conexões/quedas reais do link BLE, persistido entre sessões.
   const [connectionEvents, setConnectionEvents] = useState(() => loadEvents());
   function recordLink(connected) {
     setConnectionEvents((prev) => recordEvent(prev, connected ? 'connected' : 'disconnected'));
@@ -50,8 +43,6 @@ export function useOximeter(onWaveSample) {
   const onWaveSampleRef = useRef(onWaveSample);
   onWaveSampleRef.current = onWaveSample;
 
-  // Histórico da curva: 30 amostras/s não podem virar um setState cada — ficam
-  // num ref mutável e um contador (waveTick) re-renderiza a UI de vez em quando.
   const waveHistory = useRef([]);
   const [waveTick, setWaveTick] = useState(0);
   const lastWaveTick = useRef(0);
@@ -105,7 +96,6 @@ export function useOximeter(onWaveSample) {
     oximeter.resumePreviousDevice();
   }, [oximeter]);
 
-  // Modo demo (?demo): simula o aparelho para ver números e gráficos sem o oxímetro
   const demoStarted = useRef(false);
   useEffect(() => {
     if (!demoMode || demoStarted.current) return;

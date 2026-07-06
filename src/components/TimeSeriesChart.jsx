@@ -20,18 +20,14 @@ function fmtClock(t, withMs = false) {
   return withMs ? `${base},${String(t % 1000).padStart(3, '0')}` : base;
 }
 
-/**
- * Linha do tempo em canvas. offset=0 segue a última leitura (ao vivo);
- * arrastar o gráfico aumenta o offset e navega pelo histórico.
- */
 export default function TimeSeriesChart({
   data, color, unit, decimals = 0, yMin, yMax,
-  pxPerSec = 12, // escala fixa: o eixo X cresce com o tempo até estourar a janela
+  pxPerSec = 12,
   showMs = false,
 }) {
   const canvasRef = useRef(null);
   const [offsetSec, setOffsetSec] = useState(0);
-  const [hoverX, setHoverX] = useState(null); // x do ponteiro em px do canvas
+  const [hoverX, setHoverX] = useState(null);
   const drag = useRef(null);
 
   function plotWidth() {
@@ -68,12 +64,10 @@ export default function TimeSeriesChart({
         return;
       }
 
-      // Janela de tempo visível: termina na última leitura menos o offset do arrasto
       const viewEnd = data[data.length - 1].t - offsetSec * 1000;
       const windowMs = (pw / pxPerSec) * 1000;
       const viewStart = viewEnd - windowMs;
 
-      // Domínio Y: começa no sugerido e expande se os dados saírem dele
       let lo = yMin;
       let hi = yMax;
       for (const p of data) {
@@ -85,7 +79,6 @@ export default function TimeSeriesChart({
 
       ctx.font = '10px "Segoe UI", system-ui, sans-serif';
 
-      // Grade horizontal + rótulos Y (recessivos)
       for (const v of niceYTicks(lo, hi)) {
         const y = yOf(v);
         ctx.strokeStyle = GRID;
@@ -99,7 +92,6 @@ export default function TimeSeriesChart({
         ctx.fillText(String(Math.round(v * 10) / 10).replace('.', ','), PAD.left - 6, y + 3);
       }
 
-      // Marcas de tempo no X (passo escolhido para caber ~1 rótulo a cada 70 px)
       const tickSec = [1, 2, 5, 10, 15, 30, 60, 120, 300].find((s) => s * pxPerSec >= 70) ?? 300;
       const tickMs = tickSec * 1000;
       ctx.textAlign = 'center';
@@ -117,7 +109,6 @@ export default function TimeSeriesChart({
         ctx.fillText(lbl, Math.min(Math.max(x, PAD.left + halfW), w - halfW - 2), h - 6);
       }
 
-      // Linha da série (2 px), recortada na área do gráfico
       ctx.save();
       ctx.beginPath();
       ctx.rect(PAD.left, PAD.top, pw, ph);
@@ -134,7 +125,6 @@ export default function TimeSeriesChart({
       });
       ctx.stroke();
 
-      // Ponto da leitura mais recente quando estamos "ao vivo"
       if (offsetSec === 0) {
         const last = data[data.length - 1];
         ctx.fillStyle = color;
@@ -143,7 +133,6 @@ export default function TimeSeriesChart({
         ctx.fill();
       }
 
-      // Crosshair + tooltip no ponto mais próximo do ponteiro
       if (hoverX != null && visible.length) {
         const tAtPointer = viewStart + ((hoverX - PAD.left) / pxPerSec) * 1000;
         const p = visible.reduce((a, b) =>

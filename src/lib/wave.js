@@ -1,4 +1,3 @@
-// Curva pletismográfica: buffer circular de amostras desenhado no canvas
 export function createWave(canvas, length = 260) {
   const ctx = canvas.getContext('2d');
   const samples = new Array(length).fill(null);
@@ -19,7 +18,7 @@ export function createWave(canvas, length = 260) {
     samples.forEach((v, i) => {
       if (v === null) return;
       const x = (i / (samples.length - 1)) * w;
-      const y = h - (v / 100) * (h - 20) - 10; // amplitude ~0–100
+      const y = h - (v / 100) * (h - 20) - 10;
       if (!started) { ctx.moveTo(x, y); started = true; }
       else ctx.lineTo(x, y);
     });

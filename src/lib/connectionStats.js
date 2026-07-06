@@ -1,10 +1,5 @@
-// Registro de conexões/desconexões do oxímetro: quanto tempo ficou conectado,
-// quanto tempo ficou desconectado, quantas quedas aconteceram e o histórico de
-// cada sessão. Guarda um log bruto de eventos ('connected'/'disconnected') no
-// localStorage — tudo o mais (durações, contagens, sessões) é derivado desse
-// log. Não depende de React.
 const STORAGE_KEY = 'pc60fw-connection-log';
-const MAX_EVENTS = 1000; // ~500 ciclos conecta/desconecta guardados
+const MAX_EVENTS = 1000;
 
 export function loadEvents() {
   try {
@@ -20,16 +15,9 @@ export function loadEvents() {
 function persist(events) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-  } catch {
-    // localStorage indisponível (aba anônima, quota etc.) — histórico segue só em memória
-  }
+  } catch {}
 }
 
-/**
- * Adiciona um evento de conexão ('connected') ou queda ('disconnected').
- * Ignora repetições consecutivas do mesmo tipo, para não contar quedas
- * "fantasma" quando um handler dispara mais de uma vez para o mesmo estado.
- */
 export function recordEvent(events, type, t = Date.now()) {
   const last = events[events.length - 1];
   if (last?.type === type) return events;
@@ -44,12 +32,6 @@ export function clearEvents() {
   return [];
 }
 
-/**
- * Deriva as estatísticas a partir do log bruto: estado atual (conectado ou
- * desconectado) e há quanto tempo, total acumulado conectado/desconectado,
- * número de quedas e a lista de sessões (períodos conectados) e lacunas
- * (períodos desconectado) já concluídos — mais recente primeiro.
- */
 export function computeStats(events, now = Date.now()) {
   const sessions = [];
   const gaps = [];
@@ -84,7 +66,7 @@ export function computeStats(events, now = Date.now()) {
   if (currentState === 'disconnected') totalDisconnectedMs += ongoingMs;
 
   return {
-    currentState, // 'connected' | 'disconnected' | 'unknown'
+    currentState,
     since,
     ongoingMs,
     disconnectCount,

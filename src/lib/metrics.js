@@ -1,5 +1,3 @@
-// Metadados de cada métrica: descrição, exemplo, cor (a mesma do card na home)
-// e domínio sugerido do eixo Y (expande se os dados saírem dele).
 export const METRICS = {
   spo2: {
     key: 'spo2',
@@ -57,9 +55,6 @@ export const METRICS = {
   },
 };
 
-// A curva não fica na grade de vitais (tem painel próprio na home), mas ganha a
-// mesma tela de detalhe. Diferenças: ~30 amostras/s (vs ~1/s), valor sem unidade
-// física e escala de tempo do gráfico mais esticada para a onda ficar legível.
 export const WAVE_METRIC = {
   key: 'wave',
   label: 'Curva',
