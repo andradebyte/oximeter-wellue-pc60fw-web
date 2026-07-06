@@ -1,0 +1,200 @@
+:root {
+  --bg: #0b1020;
+  --panel: #131a30;
+  --border: #24304f;
+  --text: #e8edf7;
+  --muted: #8b97b5;
+  --spo2: #34d399;
+  --pulse: #f472b6;
+  --pi: #60a5fa;
+  --danger: #f87171;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+}
+h1 { font-size: 1.3rem; font-weight: 600; }
+.subtitle { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+
+.app { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 16px; margin-top: 20px; }
+
+.toolbar { display: flex; gap: 10px; align-items: center; }
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+  transition: background 0.15s;
+}
+button:hover { background: #1d4ed8; }
+button:disabled { background: #334066; color: var(--muted); cursor: not-allowed; }
+button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+button.secondary:hover { background: var(--panel); }
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.dot.on { background: var(--spo2); box-shadow: 0 0 8px var(--spo2); }
+.dot.err { background: var(--danger); }
+
+.vitals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+.card .label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.card .value { font-size: 2.6rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.card .unit { font-size: 0.8rem; color: var(--muted); }
+.card.spo2 .value { color: var(--spo2); }
+.card.pulse .value { color: var(--pulse); }
+.card.pi .value { color: var(--pi); }
+
+.wave-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 16px 16px;
+}
+.wave-panel .label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.wave-panel.clickable { cursor: pointer; transition: border-color 0.15s; }
+.wave-panel.clickable:hover { border-color: #3b4d7a; }
+.wave-panel .card-hint { text-align: center; }
+canvas { width: 100%; height: 120px; display: block; }
+
+.meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); }
+
+.log {
+  background: #0d1226;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  font-family: Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+.warn {
+  background: #3b1f24;
+  border: 1px solid #7a3540;
+  color: #fca5a5;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+}
+
+/* Cards da home viraram botões que abrem a tela de detalhe */
+button.card {
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 400;
+  padding: 16px;
+  transition: border-color 0.15s;
+}
+button.card:hover { background: var(--panel); border-color: #3b4d7a; }
+.card-hint { font-size: 0.7rem; color: var(--muted); margin-top: 8px; }
+
+/* Tela de detalhe da métrica */
+.detail { display: flex; flex-direction: column; gap: 16px; }
+.detail-header { display: flex; align-items: center; gap: 12px; }
+.detail-header h2 { font-size: 1.1rem; font-weight: 600; }
+.back-btn { padding: 8px 14px; }
+.detail-current { max-width: 200px; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px 16px;
+}
+.panel .label {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.desc p { font-size: 0.9rem; line-height: 1.5; color: var(--text); }
+.desc .example { margin-top: 8px; color: var(--muted); font-size: 0.85rem; }
+.cadence p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+.cadence strong { color: var(--text); }
+
+.readings {
+  list-style: none;
+  margin-top: 10px;
+  font-family: Consolas, monospace;
+  font-size: 0.8rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.readings li {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 8px;
+  border-top: 1px solid var(--border);
+}
+.reading-time { color: var(--muted); }
+.reading-value { font-variant-numeric: tabular-nums; }
+
+.chart-wrap { position: relative; }
+canvas.chart {
+  height: 220px;
+  touch-action: none;
+  cursor: grab;
+}
+canvas.chart:active { cursor: grabbing; }
+.live-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  background: #0d1226;
+  border: 1px solid var(--border);
+  color: var(--spo2);
+}
+.live-btn:hover { background: var(--bg); }
+.chart-hint { margin-top: 8px; font-size: 0.75rem; color: var(--muted); }
+
+/* Painel de histórico de conexão (home) */
+.conn-panel.clickable { cursor: pointer; transition: border-color 0.15s; }
+.conn-panel.clickable:hover { border-color: #3b4d7a; }
+.conn-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+}
+.conn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.conn-stat { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.conn-num { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.conn-caption { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+/* Tela de detalhe do histórico de conexão */
+.conn-status-big { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
+.conn-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.conn-value { font-size: 1.3rem !important; }
+.conn-timeline li { align-items: center; }
+.conn-timeline-left { display: flex; align-items: center; gap: 8px; }
+.clear-btn { margin-top: 12px; }
