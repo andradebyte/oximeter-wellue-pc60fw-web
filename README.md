@@ -125,8 +125,14 @@ screen.
 
 ### iOS
 
-❌ Doesn't work — no iOS browser supports Web Bluetooth. For iPhone you need a
-native/hybrid app (e.g. Capacitor + `@capacitor-community/bluetooth-le`).
+❌ Safari and other regular iOS browsers don't support Web Bluetooth.
+
+✅ There's a workaround: install [**Bluefy**](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055)
+(a browser dedicated to Web Bluetooth, available on the App Store) and open
+the page from it — Web Bluetooth then works normally, no native app needed.
+
+Without Bluefy, the only alternative is a native/hybrid app (e.g. Capacitor +
+`@capacitor-community/bluetooth-le`).
 
 ## Protocol details
 
