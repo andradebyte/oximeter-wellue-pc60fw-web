@@ -49,7 +49,8 @@ export function createOximeter(handlers) {
     if (token === 0x0F && type === 0x01 && f.length >= 9) {
       onVitals({ spo2: f[5], pulse: f[6], pi: f[8] / 10 });
     } else if (token === 0x0F && type === 0x02 && f.length >= 6) {
-      onWaveSample(f[5]);
+      // bit 7 = beat-detected marker; bits 0-6 = amplitude
+      onWaveSample(f[5] & 0x7F);
     } else if (token === 0xF0 && f[3] === 0x03 && f.length >= 6) {
       onBattery(f[5]);
     } else {
