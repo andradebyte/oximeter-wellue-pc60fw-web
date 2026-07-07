@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useOximeter } from './hooks/useOximeter.js';
 import { METRICS, WAVE_METRIC } from './lib/metrics.js';
 import UnsupportedWarning from './components/UnsupportedWarning.jsx';
@@ -12,7 +12,6 @@ import ConnectionStats from './components/ConnectionStats.jsx';
 import ConnectionHistory from './components/ConnectionHistory.jsx';
 
 export default function App() {
-  const waveRef = useRef(null);
   const [view, setView] = useState(
     () => new URLSearchParams(location.search).get('view') ?? 'home',
   );
@@ -20,10 +19,10 @@ export default function App() {
     supported, vitals, history, waveHistory, battery, deviceName, status, active, logs,
     connectionEvents, clearConnectionHistory,
     connect, disconnect,
-  } = useOximeter((v) => waveRef.current?.push(v));
+  } = useOximeter();
 
   const metric = view === 'wave' ? WAVE_METRIC : METRICS[view];
-  const waveSamples = waveHistory.current;
+  const waveSamples = waveHistory.current.slice();
 
   return (
     <>
@@ -50,7 +49,7 @@ export default function App() {
         ) : metric ? (
           <MetricDetail
             metric={metric}
-            history={metric.key === 'wave' ? waveSamples.slice() : history[metric.key]}
+            history={metric.key === 'wave' ? waveSamples : history[metric.key]}
             current={
               metric.key === 'wave'
                 ? (waveSamples.length ? waveSamples[waveSamples.length - 1].v : '--')
@@ -62,7 +61,7 @@ export default function App() {
           <>
             <Vitals vitals={vitals} onSelect={setView} />
 
-            <Wave apiRef={waveRef} onSelect={setView} />
+            <Wave data={waveSamples} onSelect={setView} />
 
             <ConnectionStats events={connectionEvents} onSelect={setView} />
 

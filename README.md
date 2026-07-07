@@ -15,7 +15,7 @@ src/components/Toolbar.jsx            connect/disconnect buttons + status
 src/components/Vitals.jsx             vitals cards (clickable → detail screen)
 src/components/MetricDetail.jsx       detail screen: description, numbers and chart
 src/components/TimeSeriesChart.jsx    line chart (canvas) with pan and tooltip
-src/components/Wave.jsx               waveform panel (canvas via ref)
+src/components/Wave.jsx               waveform panel (same live chart as the detail screen)
 src/components/DeviceMeta.jsx         device name + battery
 src/components/ConnectionStats.jsx    connection history summary (home)
 src/components/ConnectionHistory.jsx  detail screen: connection/drop timeline
@@ -24,16 +24,16 @@ src/components/UnsupportedWarning.jsx warning for browsers without Web Bluetooth
 src/hooks/useOximeter.js              hook that exposes the oximeter as React state
 src/lib/oximeter.js                   BLE connection + protocol parsing (no React)
 src/lib/connectionStats.js            connection stats recording/derivation (no React)
-src/lib/wave.js                       plethysmographic waveform drawing (no React)
 src/lib/metrics.js                    metric metadata (description, color, Y axis)
 src/style.css                         styles
 public/                               PWA icons
 vite.config.js                        Vite config (React + PWA/manifest)
 ```
 
-The BLE code (`lib/oximeter.js`) and the waveform drawing (`lib/wave.js`) don't depend on
-React — the integration happens in `hooks/useOximeter.js`. Waveform samples (~30 Hz)
-don't go through React state: they go straight from BLE to the canvas via ref.
+The BLE code (`lib/oximeter.js`) doesn't depend on React — the integration happens in
+`hooks/useOximeter.js`. Waveform samples (~30 Hz) don't go through React state: they
+accumulate in a mutable ref and the UI re-renders at most ~3x/s. The home screen shows
+the same live chart (`TimeSeriesChart`) as the waveform detail screen.
 
 ## Detail screens
 
