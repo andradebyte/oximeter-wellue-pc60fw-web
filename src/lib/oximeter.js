@@ -22,6 +22,7 @@ export function createOximeter(handlers) {
   let wantConnection = false;
   let reconnectTimer = null;
   let advertisementWatcher = null;
+  let connecting = false;
 
   function handleNotification(event) {
     const chunk = new Uint8Array(event.target.value.buffer);
@@ -87,6 +88,8 @@ export function createOximeter(handlers) {
   }
 
   async function establish() {
+    if (connecting || device?.gatt?.connected) return;
+    connecting = true;
     try {
       onStatus('Conectando…');
       const server = await device.gatt.connect();
@@ -96,6 +99,10 @@ export function createOximeter(handlers) {
       characteristic.addEventListener('characteristicvaluechanged', handleNotification);
       await characteristic.startNotifications();
 
+      clearTimeout(reconnectTimer);
+      advertisementWatcher?.abort();
+      advertisementWatcher = null;
+
       onStatus(`Conectado a ${device.name}`, 'on');
       onLog('Notificações ativas — coloque o dedo no oxímetro.');
       onConnectionChange(true);
@@ -103,6 +110,8 @@ export function createOximeter(handlers) {
     } catch (err) {
       onLog(`Falha ao conectar: ${err.message}`);
       scheduleReconnect();
+    } finally {
+      connecting = false;
     }
   }
 
@@ -116,12 +125,14 @@ export function createOximeter(handlers) {
 
   function waitForAdvertisement() {
     if (!wantConnection || !device) return;
-    if (typeof device.watchAdvertisements !== 'function') {
-      scheduleReconnect();
-      return;
-    }
-    onStatus('Aguardando o oxímetro ligar… (coloque o dedo)');
-    onConnectionChange(true);
+
+    // As tentativas periódicas ficam SEMPRE ativas: no Chrome Android o
+    // watchAdvertisements existe mas o evento pode nunca disparar — sem o
+    // timer a página ficaria esperando para sempre. O watcher, quando
+    // funciona (desktop), só acelera a reconexão.
+    scheduleReconnect();
+
+    if (typeof device.watchAdvertisements !== 'function') return;
 
     advertisementWatcher?.abort();
     advertisementWatcher = new AbortController();
@@ -136,7 +147,6 @@ export function createOximeter(handlers) {
     device.watchAdvertisements({ signal: advertisementWatcher.signal }).catch((err) => {
       if (err.name === 'AbortError') return;
       onLog(`watchAdvertisements indisponível (${err.message}) — usando tentativas periódicas.`);
-      scheduleReconnect();
     });
   }
 

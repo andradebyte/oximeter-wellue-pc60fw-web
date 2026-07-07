@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useOximeter } from './hooks/useOximeter.js';
 import { METRICS, WAVE_METRIC } from './lib/metrics.js';
 import UnsupportedWarning from './components/UnsupportedWarning.jsx';
+import InstallPrompt from './components/InstallPrompt.jsx';
 import Toolbar from './components/Toolbar.jsx';
 import Vitals from './components/Vitals.jsx';
 import Wave from './components/Wave.jsx';
@@ -31,6 +32,8 @@ export default function App() {
 
       <div className="app">
         {!supported && <UnsupportedWarning />}
+
+        <InstallPrompt />
 
         <Toolbar
           supported={supported}
