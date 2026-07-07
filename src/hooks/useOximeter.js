@@ -14,8 +14,12 @@ function timestamp(msg) {
 }
 
 function appendReading(list, v) {
+  const now = Date.now();
+  // vitals history is 1 reading/s max — the device may send several frames per second
+  const last = list[list.length - 1];
+  if (last && now - last.t < 1000) return list;
   const next = list.length >= HISTORY_CAP ? list.slice(1) : list.slice();
-  next.push({ t: Date.now(), v });
+  next.push({ t: now, v });
   return next;
 }
 
