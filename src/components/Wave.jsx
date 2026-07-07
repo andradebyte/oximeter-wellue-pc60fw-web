@@ -1,20 +1,23 @@
-import { useEffect, useRef } from 'react';
-import { createWave } from '../lib/wave.js';
+import { WAVE_METRIC } from '../lib/metrics.js';
+import TimeSeriesChart from './TimeSeriesChart.jsx';
 
-export default function Wave({ apiRef, onSelect }) {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const wave = createWave(canvasRef.current);
-    wave.draw();
-    apiRef.current = wave;
-    return () => { apiRef.current = null; };
-  }, [apiRef]);
-
+export default function Wave({ data, onSelect }) {
+  const m = WAVE_METRIC;
   return (
     <div className="wave-panel clickable" onClick={() => onSelect('wave')}>
       <div className="label">Curva pletismográfica (experimental)</div>
-      <canvas ref={canvasRef} width="1040" height="240" />
+      <div onClick={(e) => e.stopPropagation()}>
+        <TimeSeriesChart
+          data={data}
+          color={m.color}
+          unit={m.unit}
+          decimals={m.decimals}
+          yMin={m.yMin}
+          yMax={m.yMax}
+          pxPerSec={m.pxPerSec}
+          showMs={m.showMs}
+        />
+      </div>
       <div className="card-hint">ver detalhes →</div>
     </div>
   );
